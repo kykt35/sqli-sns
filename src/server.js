@@ -32,8 +32,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     };
     process.on('SIGINT', stop);
     process.on('SIGTERM', stop);
-  } catch (_error) {
-    console.error('起動できませんでした。設定と待受ポートを確認してください。');
+  } catch (error) {
+    console.error('起動できませんでした。設定と待受ポートを確認してください。', error.code || error.name);
     process.exitCode = 1;
   }
 }

@@ -15,6 +15,12 @@ export async function createApplication(config, { seed, now = Date.now } = {}) {
   app.disable('x-powered-by');
   app.use((_req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
   app.use(session({
+    genid(req) {
+      const id = store.createId();
+      const discard = () => store.discardUnused(id);
+      req.res.once('finish', discard); req.res.once('close', discard);
+      return id;
+    },
     name: 'sns.sid', secret: config.sessionSecret, store, resave: false, saveUninitialized: false, rolling: true,
     cookie: { httpOnly: true, sameSite: 'lax', secure: config.mode === 'public', maxAge: config.ttlMs },
   }));
