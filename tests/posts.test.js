@@ -16,6 +16,7 @@ test('posts enforce visibility, validation, owner assignment and csrf', async t 
   for (const form of [{ body: ' ', is_public: '1' }, { body: 'x'.repeat(1001), is_public: '1' }, { body: 'valid', is_public: '2' }]) {
     assert.equal((await submit(a, '/posts', form, '/posts/new')).status, 400);
   }
+  for (const body of ['a', '語'.repeat(1000)]) assert.equal((await submit(a, '/posts', { body, is_public: '1' }, '/posts/new')).status, 303);
   const created = await submit(a, '/posts', { body: '<script>alert(1)</script> 日本語', is_public: '0', user_id: '2' }, '/posts/new');
   assert.equal(created.status, 303);
   const path = created.headers.get('location');

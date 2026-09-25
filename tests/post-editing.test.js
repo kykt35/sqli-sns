@@ -18,6 +18,11 @@ test('editing changes only an owned body, even with extra fields and SQL-like in
   assert.match(detail.text, /user_id=2 WHERE 1=1--/);
   assert.match(detail.text, /非公開/);
   assert.doesNotMatch((await a.request('/')).text, /user_id=2 WHERE 1=1--/);
+  const newline = '\nleading newline';
+  await submit(a, '/posts/1', { body: newline }, '/posts/1/edit');
+  assert.match((await a.request('/posts/1/edit')).text, />\n\nleading newline<\/textarea>/);
+  assert.equal((await submit(a, '/posts/1', { body: ' ' }, '/posts/1/edit')).status, 400);
+  assert.match((await a.request('/posts/1')).text, /leading newline/);
   const before = await a.request('/posts/3');
   assert.match(before.text, /コーヒー/);
   assert.equal((await a.request('/posts/1', { method: 'POST', form: { body: 'no csrf' } })).status, 403);
