@@ -4,7 +4,11 @@ import { fileURLToPath } from 'node:url';
 export async function launch(env = {}) {
   const child = spawn(process.execPath, ['src/server.js'], {
     cwd: fileURLToPath(new URL('../../', import.meta.url)),
-    env: { ...process.env, APP_MODE: 'local', HOST: '127.0.0.1', PORT: '0', ...env },
+    env: {
+      ...process.env, APP_MODE: 'local', HOST: '127.0.0.1', PORT: '0',
+      BASIC_AUTH_USERNAME: '', BASIC_AUTH_PASSWORD: '', TRUST_PROXY: '',
+      SESSION_SECRET: '', MAX_ENVIRONMENTS: '50', SESSION_TTL_MINUTES: '240', ...env,
+    },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   const closed = new Promise(resolve => child.once('exit', resolve));
