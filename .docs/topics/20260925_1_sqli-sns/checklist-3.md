@@ -31,27 +31,27 @@
 
 | ID | 種別 | 内容 | 対応コミット（予定） | 実績コミット | 状態 | メモ |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1-1 | test | 本文境界値、未ログイン、CSRF、不正な公開フラグ、投稿者ID偽装、公開一覧、自己／他人の非公開詳細、最大50件・並び順のHTTPテストを作る。 | `test(posts): define creation and visibility contracts` |   | planned |  |
-| 1-2 | impl | 投稿作成・公開一覧・詳細のDB処理とルートを実装する。入力値はバインドし、投稿者はセッションから決め、存在しない／閲覧不可の詳細は404とする。 | `feat(posts): add creation timeline and detail routes` |   | planned |  |
-| 1-3 | impl | 本文・投稿者・公開状態・投稿IDを表示する一覧／詳細／作成フォームを追加する。成功後のリダイレクトと日本語エラーを共通レイアウトへ接続する。 | `feat(ui): add post creation and reading screens` |   | planned |  |
-| 1-4 | verify | 投稿テストと全テスト・lintを実行し、公開一覧に自己非公開投稿が混ざらないことをブラウザでも確認する。 | - | - | planned |  |
+| 1-1 | test | 本文境界値、未ログイン、CSRF、不正な公開フラグ、投稿者ID偽装、公開一覧、自己／他人の非公開詳細、最大50件・並び順のHTTPテストを作る。 | `test(posts): define creation and visibility contracts` | 5e58d43 | done | 実装前の失敗確認 |
+| 1-2 | impl | 投稿作成・公開一覧・詳細のDB処理とルートを実装する。入力値はバインドし、投稿者はセッションから決め、存在しない／閲覧不可の詳細は404とする。 | `feat(posts): add creation timeline and detail routes` | 79772c7 | done | 認可をDB更新条件にも適用 |
+| 1-3 | impl | 本文・投稿者・公開状態・投稿IDを表示する一覧／詳細／作成フォームを追加する。成功後のリダイレクトと日本語エラーを共通レイアウトへ接続する。 | `feat(ui): add post creation and reading screens` | 14e848f | changed | 作成・編集フォームを共通化 |
+| 1-4 | verify | 投稿テストと全テスト・lintを実行し、公開一覧に自己非公開投稿が混ざらないことをブラウザでも確認する。 | - | - | done | 19テスト・lint成功、ブラウザ確認 |
 
 ### Task 2: 自己投稿の本文編集を実装する
 
 | ID | 種別 | 内容 | 対応コミット（予定） | 実績コミット | 状態 | メモ |
 | --- | --- | --- | --- | --- | --- | --- |
-| 2-1 | test | 正常編集、他人のID指定、user_id・is_publicの追加送信、CSRF欠落、SQL風本文、再読み込み後の保存結果を検証するテストを作る。 | `test(posts): cover ownership and edit boundaries` |   | planned |  |
-| 2-2 | impl | 編集フォームと更新処理を追加し、更新する列をbody・updated_atに固定する。SQLの更新条件に投稿IDとログイン利用者IDを含め、0件更新は404とする。 | `feat(posts): add owner-only body editing` |   | planned |  |
-| 2-3 | verify | 編集テストを実行し、他人の本文・投稿者・公開状態が変わらないことをDBでも確認する。 | - | - | planned |  |
+| 2-1 | test | 正常編集、他人のID指定、user_id・is_publicの追加送信、CSRF欠落、SQL風本文、再読み込み後の保存結果を検証するテストを作る。 | `test(posts): cover ownership and edit boundaries` | 3ac6f16 | done | 改変入力と不正編集を検証 |
+| 2-2 | impl | 編集フォームと更新処理を追加し、更新する列をbody・updated_atに固定する。SQLの更新条件に投稿IDとログイン利用者IDを含め、0件更新は404とする。 | `feat(posts): add owner-only body editing` | 79772c7 / 14e848f | changed | 投稿ルート・画面と同時実装 |
+| 2-3 | verify | 編集テストを実行し、他人の本文・投稿者・公開状態が変わらないことをDBでも確認する。 | - | - | done | 不正更新拒否・本文保持確認 |
 
 ### Task 3: 公開範囲を守る本文検索を実装する
 
 | ID | 種別 | 内容 | 対応コミット（予定） | 実績コミット | 状態 | メモ |
 | --- | --- | --- | --- | --- | --- | --- |
-| 3-1 | test | 未ログイン／ログイン時の公開範囲、空検索、日本語、引用符、%・_・エスケープ文字、SQL風文字列、件数上限、ダイジェスト非露出を検証する。 | `test(search): define safe search and visibility contracts` |   | planned |  |
-| 3-2 | impl | パラメーター化した本文の部分一致検索を独立したモジュールに実装する。公開範囲の条件を必須とし、必要な投稿列とusernameだけを取得する。 | `feat(search): add parameterized visible-post search` |   | planned |  |
-| 3-3 | impl | 共通検索欄、検索結果、0件表示、入力エラー、件数上限の案内を追加し、検索語と本文をエスケープして表示する。 | `feat(ui): add post search results` |   | planned |  |
-| 3-4 | verify | 全テスト・lintと検索のブラウザ確認を実行する。本人の非公開投稿が検索でき、他人のものはURLや検索語を変えても取得できないことを確認する。 | - | - | planned |  |
+| 3-1 | test | 未ログイン／ログイン時の公開範囲、空検索、日本語、引用符、%・_・エスケープ文字、SQL風文字列、件数上限、ダイジェスト非露出を検証する。 | `test(search): define safe search and visibility contracts` | 56cc529 | done | ワイルドカード・件数上限を検証 |
+| 3-2 | impl | パラメーター化した本文の部分一致検索を独立したモジュールに実装する。公開範囲の条件を必須とし、必要な投稿列とusernameだけを取得する。 | `feat(search): add parameterized visible-post search` | aac7ec3 | done | 検索を独立モジュールへ配置 |
+| 3-3 | impl | 共通検索欄、検索結果、0件表示、入力エラー、件数上限の案内を追加し、検索語と本文をエスケープして表示する。 | `feat(ui): add post search results` | 2d6f8aa | done | 公開範囲を守る検索画面 |
+| 3-4 | verify | 全テスト・lintと検索のブラウザ確認を実行する。本人の非公開投稿が検索でき、他人のものはURLや検索語を変えても取得できないことを確認する。 | - | - | done | 19テスト・lint成功。修正後は対象4テスト再実行 |
 
 ## 検証記録
 
@@ -81,3 +81,7 @@
 - [ ] stacked PRでは直下Planのheadをbaseとし、下位マージ後はbaseと差分を更新した
 - [ ] このPlanに対応するPRを1つだけ作成または更新した
 - [ ] 実施内容、テスト結果、stack内の依存関係、残件をPR要約へ反映した
+
+## 実行記録
+
+2026-09-25: 全19テストとlint成功。独立レビュー2名で、編集時の先頭改行欠落を検出・修正し、ブラウザで無変更保存時にも保持されることを確認。検索のワイルドカード入力時に無関係な公開投稿が混ざらない否定検証と境界値も補強。投稿作成・詳細・編集・検索・本人の非公開投稿をブラウザで確認。作成・編集ルートとフォームは共通責務のため実装コミットを集約。
