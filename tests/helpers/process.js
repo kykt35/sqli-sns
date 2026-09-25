@@ -7,7 +7,8 @@ export async function launch(env = {}) {
     env: {
       ...process.env, APP_MODE: 'local', HOST: '127.0.0.1', PORT: '0',
       BASIC_AUTH_USERNAME: '', BASIC_AUTH_PASSWORD: '', TRUST_PROXY: '',
-      SESSION_SECRET: '', MAX_ENVIRONMENTS: '50', SESSION_TTL_MINUTES: '240', ...env,
+      SESSION_SECRET: '', SESSION_TTL_MINUTES: '240',
+      MAX_POSTS: '1000', MAX_USERS: '100', ...env,
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });

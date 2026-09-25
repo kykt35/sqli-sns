@@ -4,7 +4,7 @@ import { startServer } from '../src/server.js';
 import { readConfig } from '../src/config.js';
 import { client, submit } from './helpers/http.js';
 
-test('registration validates values, CSRF, duplicates and environment isolation', async t => {
+test('registration validates values, CSRF and globally unique usernames', async t => {
   const running = await startServer({ config: readConfig({ PORT: '0' }) }); t.after(() => running.close());
   const a = client(running.url), b = client(running.url);
   assert.equal((await a.request('/register', { method: 'POST', form: { username: 'newuser', password: 'example-pass' } })).status, 403);
@@ -16,5 +16,14 @@ test('registration validates values, CSRF, duplicates and environment isolation'
   const duplicate = await submit(a, '/register', { username: 'NEW_USER', password: 'do-not-echo-this' });
   assert.equal(duplicate.status, 409); assert.doesNotMatch(duplicate.text, /do-not-echo-this|scrypt\$/);
   assert.equal((await submit(a, '/register', { username: 'alice', password: 'example-pass' })).status, 409);
-  assert.equal((await submit(b, '/register', { username: 'new_user', password: 'example-pass' })).status, 303);
+  assert.equal((await submit(b, '/register', { username: 'new_user', password: 'example-pass' })).status, 409);
+  assert.equal((await submit(b, '/login', { username: 'new_user', password: 'example-pass' })).status, 303);
+});
+
+test('concurrent registrations from different browsers cannot duplicate a username', async t => {
+  const running = await startServer({ config: readConfig({ PORT: '0' }) });
+  t.after(() => running.close());
+  const results = await Promise.all([client(running.url), client(running.url)].map(c => submit(c, '/register', { username: 'same_username', password: 'example-pass' })));
+  assert.deepEqual(results.map(r => r.status).sort(), [303, 409]);
+  assert.equal(running.db.prepare('SELECT count(*) n FROM users WHERE username = ?').get('same_username').n, 1);
 });
