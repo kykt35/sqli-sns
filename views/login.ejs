@@ -1,0 +1,17 @@
+<%- include('partials/header') %>
+<section class="auth-panel">
+  <p class="eyebrow">WELCOME BACK</p>
+  <h1>おかえりなさい。</h1>
+  <p class="intro">今日のひとことを残しましょう。</p>
+  <% if (error) { %><p class="alert" role="alert"><%= error %></p><% } %>
+  <form method="post" action="/login" class="stack">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <label for="username">ユーザー名</label>
+    <input id="username" name="username" value="<%= username %>" autocomplete="username" maxlength="32" required>
+    <label for="password">パスワード</label>
+    <input id="password" name="password" type="password" autocomplete="current-password" maxlength="256" required>
+    <button type="submit" class="button">ログイン</button>
+  </form>
+  <p class="switch-form">はじめての方は <a href="/register">アカウントを作成</a></p>
+</section>
+<%- include('partials/footer') %>
