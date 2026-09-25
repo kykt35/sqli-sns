@@ -38,7 +38,7 @@
 
 秘密値の生成例は `node -e 'console.log(require("node:crypto").randomBytes(32).toString("hex"))'` です。生成値は運営者の設定先に保存します。
 
-アプリはTLSを終端しません。プロキシ側でHTTPSを終端し、受信した `X-Forwarded-Proto` をプロキシ自身の正しい値で上書きしてください。アプリの待受に接続できる送信元も実プロキシに限定します。`TRUST_PROXY=true`、ワイルドカード、全IP範囲は使用できません。Dockerではアプリから見えるプロキシの送信元アドレスを確認して設定します。
+アプリはTLSを終端しません。プロキシ側でHTTPSを終端し、受信した `X-Forwarded-Proto` をプロキシ自身の正しい値で上書きしてください。アプリの待受に接続できる送信元も実プロキシに限定します。`TRUST_PROXY=true`、ワイルドカード、全IP範囲は使用できません。IPv4射影IPv6のCIDR表記も拒否するため、該当する範囲はIPv4 CIDRで指定してください。Dockerではアプリから見えるプロキシの送信元アドレスを確認して設定します。
 
 publicでは、信頼したプロキシ経由のHTTPSと認識できないリクエストは426、Basic認証なし／不正は401になります。全ページ・静的ファイルを対象とし、環境割り当て前に判定します。CookieにはHttpOnly・SameSite=Lax・Secureが付きます。実際の公開URLでログインとCookieが成立することを確認してください。
 
