@@ -1,0 +1,24 @@
+{
+  "name": "sqli-sns",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.22.0 <23"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env src/server.js",
+    "dev": "node --watch --env-file-if-exists=.env src/server.js",
+    "test": "node --test --test-concurrency=1 tests/*.test.js",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "better-sqlite3": "13.0.3",
+    "ejs": "6.0.1",
+    "express": "5.2.1",
+    "express-session": "1.19.0"
+  },
+  "devDependencies": {
+    "eslint": "10.11.0"
+  }
+}

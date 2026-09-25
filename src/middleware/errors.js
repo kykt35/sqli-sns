@@ -1,0 +1,11 @@
+export function notFound(_req, res) {
+  res.status(404).render('error', { title: 'ページが見つかりません', message: 'ページが存在しないか、閲覧できません。' });
+}
+export function handleError(error, _req, res, _next) {
+  if (res.headersSent) return _next(error);
+  const status = [400, 413, 503].includes(error.status) ? error.status : 500;
+  if (status === 500) console.error('SNS request failed:', error.code || error.name);
+  const message = status === 503 ? '利用できる環境がいっぱいです。しばらくしてからお試しください。' :
+    status === 400 || status === 413 ? '入力内容が正しくないか、長すぎます。' : '処理できませんでした。時間をおいてお試しください。';
+  res.status(status).render('error', { title: '処理できませんでした', message });
+}

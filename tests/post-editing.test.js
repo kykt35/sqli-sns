@@ -1,0 +1,30 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { startServer } from '../src/server.js';
+import { readConfig } from '../src/config.js';
+import { client, submit, csrf } from './helpers/http.js';
+
+test('editing changes only an owned body, even with extra fields and SQL-like input', async t => {
+  const running = await startServer({ config: readConfig({ PORT: '0' }) }); t.after(() => running.close());
+  const a = client(running.url);
+  await submit(a, '/login', { username: 'alice', password: 'alice-pass-2026' });
+  assert.equal((await a.request('/posts/3/edit')).status, 404);
+  const token = csrf(await a.request('/posts/1/edit'));
+  assert.equal((await a.request('/posts/3', { method: 'POST', form: { body: 'changed', _csrf: token } })).status, 404);
+  const body = "O'Reilly', user_id=2 WHERE 1=1--";
+  const changed = await submit(a, '/posts/2', { body, user_id: '2', is_public: '1' }, '/posts/2/edit');
+  assert.equal(changed.status, 303);
+  const detail = await a.request('/posts/2');
+  assert.match(detail.text, /user_id=2 WHERE 1=1--/);
+  assert.match(detail.text, /非公開/);
+  assert.doesNotMatch((await a.request('/')).text, /user_id=2 WHERE 1=1--/);
+  const newline = '\nleading newline';
+  await submit(a, '/posts/1', { body: newline }, '/posts/1/edit');
+  assert.match((await a.request('/posts/1/edit')).text, />\n\nleading newline<\/textarea>/);
+  assert.equal((await submit(a, '/posts/1', { body: ' ' }, '/posts/1/edit')).status, 400);
+  assert.match((await a.request('/posts/1')).text, /leading newline/);
+  const before = await a.request('/posts/3');
+  assert.match(before.text, /コーヒー/);
+  assert.equal((await a.request('/posts/1', { method: 'POST', form: { body: 'no csrf' } })).status, 403);
+  assert.equal((await a.request('/posts/1%20OR%201=1')).status, 404);
+});
