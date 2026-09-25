@@ -15,7 +15,7 @@ import { environmentMiddleware } from './middleware/environment.js';
 
 export async function createApplication(config, { seed, now = Date.now } = {}) {
   const initial = seed || await prepareSeed();
-  const environments = new EnvironmentRegistry({ max: config.maxEnvironments, ttlMs: config.ttlMs, now, factory: () => createDatabase(initial) });
+  const environments = new EnvironmentRegistry({ max: config.maxEnvironments, ttlMs: config.ttlMs, now, factory: () => createDatabase(initial, config.databaseLimits) });
   const store = new SessionStore({ ttlMs: config.ttlMs, now });
   const cleanup = setInterval(() => { environments.sweep(); store.sweep(); }, Math.min(config.ttlMs, 60_000));
   cleanup.unref();
