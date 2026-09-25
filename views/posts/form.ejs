@@ -1,0 +1,12 @@
+<%- include('../partials/header') %>
+<a class="back-link" href="<%= editing ? '/posts/' + post.id : '/' %>">← 戻る</a>
+<p class="eyebrow"><%= editing ? 'EDIT YOUR NOTE' : 'A SMALL NOTE' %></p><h1><%= title %></h1><p class="intro">いま、どんなことを考えていますか。</p>
+<% if (error) { %><p class="alert" role="alert"><%= error %></p><% } %>
+<form method="post" action="<%= editing ? '/posts/' + post.id : '/posts' %>" class="stack compose">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <label for="body">本文</label><textarea id="body" name="body" maxlength="2000" required aria-describedby="body-help" placeholder="今日のひとこと…"><%= post.body %></textarea>
+  <p id="body-help" class="help">1〜1,000文字で入力してください。</p>
+  <% if (!editing) { %><label for="is_public">公開範囲</label><select id="is_public" name="is_public"><option value="1" <%= post.is_public ? 'selected' : '' %>>公開 — みんなに見せる</option><option value="0" <%= post.is_public ? '' : 'selected' %>>非公開 — 自分だけ</option></select><% } else { %><p class="help">公開範囲：<%= post.is_public ? '公開' : '非公開' %>（変更できません）</p><% } %>
+  <button type="submit" class="button"><%= editing ? '変更を保存' : '投稿する' %></button>
+</form>
+<%- include('../partials/footer') %>
