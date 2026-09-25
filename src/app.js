@@ -21,6 +21,7 @@ export async function createApplication(config, { seed, now = Date.now } = {}) {
   app.use(environmentMiddleware(environments));
   app.get('/', (_req, res) => res.type('text').send('簡易SNS'));
   app.use((error, _req, res, _next) => {
+    if (error.status !== 503) console.error('SNS request failed:', error.name);
     res.status(error.status === 503 ? 503 : 500).type('text').send(error.status === 503 ? error.message : '処理できませんでした。');
   });
   return { app, config, environments, store, close() { clearInterval(cleanup); store.close(); environments.close(); } };
