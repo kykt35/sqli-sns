@@ -11,13 +11,13 @@ test('database quotas include seeds and cover every account and visibility', asy
   try {
     createPost(db, 1, 'public', 1);
     const id = createPost(db, 2, 'private', 0);
-    assert.throws(() => createPost(db, 1, 'over quota', 0), { code: 'SQLITE_CONSTRAINT_TRIGGER', message: 'environment_post_limit' });
+    assert.throws(() => createPost(db, 1, 'over quota', 0), { code: 'SQLITE_CONSTRAINT_TRIGGER', message: 'database_post_limit' });
     assert.throws(() => db.prepare('INSERT INTO posts (user_id, body, is_public) VALUES (2, ?, 1)').run('alternate writer'), { code: 'SQLITE_CONSTRAINT_TRIGGER' });
     assert.equal(db.prepare('SELECT count(*) n FROM posts').get().n, 6);
     assert.equal(editPost(db, id, 2, 'edited at capacity'), 1);
     const insertUser = db.prepare('INSERT INTO users (username, password_digest) VALUES (?, ?)');
     insertUser.run('third', 'test-digest');
-    assert.throws(() => insertUser.run('fourth', 'test-digest'), { code: 'SQLITE_CONSTRAINT_TRIGGER', message: 'environment_user_limit' });
+    assert.throws(() => insertUser.run('fourth', 'test-digest'), { code: 'SQLITE_CONSTRAINT_TRIGGER', message: 'database_user_limit' });
     assert.equal(db.prepare('SELECT count(*) n FROM users').get().n, 3);
   } finally { db.close(); }
 });
@@ -50,9 +50,9 @@ test('database page limit also rejects an oversized edit without changing the ro
   } finally { db.close(); }
 });
 
-test('HTTP storage limit stays enforced across activity and account changes while other environments work', async t => {
+test('shared storage limit survives activity, account changes and new or expired sessions', async t => {
   let now = Date.now();
-  const running = await startServer({ config: readConfig({ PORT: '0', MAX_POSTS_PER_ENVIRONMENT: '6' }), now: () => now });
+  const running = await startServer({ config: readConfig({ PORT: '0', MAX_POSTS: '6' }), now: () => now });
   t.after(() => running.close());
   const a = client(running.url), b = client(running.url);
   await submit(a, '/login', { username: 'alice', password: 'alice-pass-2026' });
@@ -62,7 +62,7 @@ test('HTTP storage limit stays enforced across activity and account changes whil
     const rejected = await submit(a, '/posts', { body: 'must-not-be-saved', is_public: '1' }, '/posts/new');
     assert.equal(rejected.status, 507);
     assert.match(rejected.text, /保存容量の上限/);
-    assert.doesNotMatch(rejected.text, /SQLITE|environment_post_limit/);
+    assert.doesNotMatch(rejected.text, /SQLITE|database_post_limit/);
   }
   await submit(a, '/logout', {}, '/');
   await submit(a, '/login', { username: 'bob', password: 'bob-pass-2026' });
@@ -70,26 +70,44 @@ test('HTTP storage limit stays enforced across activity and account changes whil
   assert.equal((await submit(a, '/posts/3', { body: 'edit-still-works' }, '/posts/3/edit')).status, 303);
   assert.match((await a.request('/posts/3')).text, /edit-still-works/);
   await submit(b, '/login', { username: 'alice', password: 'alice-pass-2026' });
-  assert.equal((await submit(b, '/posts', { body: 'other-environment', is_public: '1' }, '/posts/new')).status, 303);
+  assert.equal((await submit(b, '/posts', { body: 'another-browser', is_public: '1' }, '/posts/new')).status, 507);
+  assert.match((await b.request('/posts/3')).text, /edit-still-works/);
+  a.cookie = '';
+  now += running.config.ttlMs + 1;
+  await submit(a, '/login', { username: 'alice', password: 'alice-pass-2026' });
+  assert.equal((await submit(a, '/posts', { body: 'after-expiry', is_public: '1' }, '/posts/new')).status, 507);
   assert.doesNotMatch((await a.request('/search?q=must-not-be-saved')).text, /post-body/);
 });
 
-test('concurrent registrations cannot exceed the final account slot', async t => {
-  const running = await startServer({ config: readConfig({ PORT: '0', MAX_USERS_PER_ENVIRONMENT: '3' }) });
+test('concurrent registrations from different browsers cannot exceed the final shared account slot', async t => {
+  const running = await startServer({ config: readConfig({ PORT: '0', MAX_USERS: '3' }) });
   t.after(() => running.close());
   const a = client(running.url), b = client(running.url);
-  const token = csrf(await a.request('/register'));
+  const tokens = await Promise.all([a, b].map(async c => csrf(await c.request('/register'))));
   const usernames = ['contender_one', 'contender_two'];
-  const results = await Promise.all(usernames.map(username => a.request('/register', { method: 'POST', form: { username, password: 'account-password', _csrf: token } })));
+  const results = await Promise.all(usernames.map((username, i) => [a, b][i].request('/register', { method: 'POST', form: { username, password: 'account-password', _csrf: tokens[i] } })));
   assert.deepEqual(results.map(r => r.status).sort(), [303, 507]);
   const winner = usernames[results.findIndex(r => r.status === 303)];
   assert.equal((await submit(a, '/register', { username: winner, password: 'account-password' })).status, 409);
   assert.equal((await submit(a, '/login', { username: winner, password: 'account-password' })).status, 303);
-  assert.equal((await submit(b, '/register', { username: 'independent', password: 'account-password' })).status, 303);
+  assert.equal((await submit(b, '/register', { username: 'another_user', password: 'account-password' })).status, 507);
+  assert.equal(running.db.prepare('SELECT count(*) n FROM users').get().n, 3);
 });
 
 test('storage settings reject limits that cannot hold seed data or exceed the supported budget', () => {
-  for (const env of [{ MAX_POSTS_PER_ENVIRONMENT: '3' }, { MAX_POSTS_PER_ENVIRONMENT: '10001' }, { MAX_USERS_PER_ENVIRONMENT: '1' }, { MAX_USERS_PER_ENVIRONMENT: '1001' }, { MAX_POSTS_PER_ENVIRONMENT: '1.5' }, { MAX_USERS_PER_ENVIRONMENT: 'x' }]) {
+  for (const env of [{ MAX_POSTS: '3' }, { MAX_POSTS: '10001' }, { MAX_USERS: '1' }, { MAX_USERS: '1001' }, { MAX_POSTS: '1.5' }, { MAX_USERS: 'x' }]) {
     assert.throws(() => readConfig(env));
   }
+});
+
+test('HTTP reports database capacity errors without losing shared rows', async t => {
+  const running = await startServer({ config: readConfig({ PORT: '0' }) });
+  t.after(() => running.close());
+  const a = client(running.url), b = client(running.url);
+  await submit(a, '/login', { username: 'alice', password: 'alice-pass-2026' });
+  running.db.pragma(`max_page_count = ${running.db.pragma('page_count', { simple: true })}`);
+  const result = await submit(a, '/posts/1', { body: '😀'.repeat(1000) }, '/posts/1/edit');
+  assert.equal(result.status, 507);
+  assert.doesNotMatch(result.text, /SQLITE|database_post_limit/);
+  assert.match((await b.request('/posts/1')).text, /今日はエンジニアカフェ/);
 });

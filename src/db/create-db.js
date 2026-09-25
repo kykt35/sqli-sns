@@ -12,7 +12,7 @@ export function createDatabase(seed, limits) {
   const { maxPosts, maxUsers } = readStorageLimits(limits);
   const db = new Database(':memory:');
   try {
-    // Bound SQLite storage to 8 MiB per environment, including indexes and edits.
+    // Bound the shared SQLite database to 8 MiB, including indexes and edits.
     // This is a database-page budget, not a bound on total process RSS.
     db.pragma('page_size = 4096');
     db.pragma('max_page_count = 2048');
@@ -35,10 +35,10 @@ export function createDatabase(seed, limits) {
       -- that finish password hashing after another request claims the last slot.
       CREATE TRIGGER users_storage_limit BEFORE INSERT ON users
       WHEN (SELECT count(*) FROM users) >= ${maxUsers}
-      BEGIN SELECT RAISE(ABORT, 'environment_user_limit'); END;
+      BEGIN SELECT RAISE(ABORT, 'database_user_limit'); END;
       CREATE TRIGGER posts_storage_limit BEFORE INSERT ON posts
       WHEN (SELECT count(*) FROM posts) >= ${maxPosts}
-      BEGIN SELECT RAISE(ABORT, 'environment_post_limit'); END;
+      BEGIN SELECT RAISE(ABORT, 'database_post_limit'); END;
     `);
     db.transaction(() => {
       const user = db.prepare('INSERT INTO users (id, username, password_digest) VALUES (?, ?, ?)');

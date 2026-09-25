@@ -14,15 +14,15 @@ test('public mode requires secrets and an explicit valid proxy boundary', () => 
   for (const value of ['::ffff:0.0.0.0/96', '::ffff:0.0.0.0/64', '0:0:0:0:0:FFFF:0:0/96', '::ffff:c000:201/120']) assert.throws(() => readConfig({ ...settings, TRUST_PROXY: value }));
   assert.doesNotThrow(() => readConfig({ ...settings, TRUST_PROXY: '192.0.2.0/24,2001:db8::/64' }));
 });
-test('Basic auth protects every route and static file before environment allocation', async t => {
+test('Basic auth protects every route and static file before session creation', async t => {
   const running = await startServer({ config: readConfig(settings) }); t.after(() => running.close());
   const a = client(running.url);
   for (const path of ['/', '/register', '/login', '/search', '/posts/new', '/posts/1', '/styles.css', '/missing']) {
     const response = await a.request(path, { headers: { 'x-forwarded-proto': 'https' } });
     assert.equal(response.status, 401, path); assert.match(response.headers.get('www-authenticate'), /Basic/);
+    assert.equal(response.headers.get('set-cookie'), null);
   }
   assert.equal((await a.request('/register', { method: 'POST', form: {}, headers: { 'x-forwarded-proto': 'https' } })).status, 401);
-  assert.equal(running.environments.size, 0);
   assert.equal((await a.request('/', { headers: { 'x-forwarded-proto': 'https', authorization: 'Basic invalid' } })).status, 401);
   const valid = await a.request('/', { headers: { 'x-forwarded-proto': 'https', authorization } });
   assert.equal(valid.status, 200); assert.match(valid.headers.get('set-cookie'), /Secure/);
@@ -31,6 +31,7 @@ test('Basic auth protects every route and static file before environment allocat
 test('untrusted forwarded HTTPS and direct HTTP cannot bypass public transport policy', async t => {
   const running = await startServer({ config: readConfig({ ...settings, TRUST_PROXY: '192.0.2.1' }) }); t.after(() => running.close());
   const a = client(running.url);
-  assert.equal((await a.request('/', { headers: { 'x-forwarded-proto': 'https', authorization } })).status, 426);
-  assert.equal(running.environments.size, 0);
+  const response = await a.request('/', { headers: { 'x-forwarded-proto': 'https', authorization } });
+  assert.equal(response.status, 426);
+  assert.equal(response.headers.get('set-cookie'), null);
 });

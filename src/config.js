@@ -28,8 +28,7 @@ export function readConfig(env = process.env) {
     basicUsername, basicPassword, trustedProxies,
     mode, host: env.HOST || '127.0.0.1',
     port: integer(env.PORT, 3000, 0, 65535, 'PORT'),
-    maxEnvironments: integer(env.MAX_ENVIRONMENTS, 50, 1, 1000, 'MAX_ENVIRONMENTS'),
-    databaseLimits: readStorageLimits({ maxPosts: env.MAX_POSTS_PER_ENVIRONMENT, maxUsers: env.MAX_USERS_PER_ENVIRONMENT }),
+    databaseLimits: readStorageLimits({ maxPosts: env.MAX_POSTS, maxUsers: env.MAX_USERS }),
     ttlMs: integer(env.SESSION_TTL_MINUTES, 240, 1, 1440, 'SESSION_TTL_MINUTES') * 60_000,
     sessionSecret: env.SESSION_SECRET || randomBytes(32).toString('hex'),
   };
