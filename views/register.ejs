@@ -1,0 +1,19 @@
+<%- include('partials/header') %>
+<section class="auth-panel">
+  <p class="eyebrow">WELCOME</p>
+  <h1>はじめまして。</h1>
+  <p class="intro">あなたのひとことを、ここから。</p>
+  <% if (error) { %><p class="alert" role="alert"><%= error %></p><% } %>
+  <form method="post" action="/register" class="stack">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <label for="username">ユーザー名</label>
+    <input id="username" name="username" value="<%= username %>" autocomplete="username" maxlength="32" required aria-describedby="username-help">
+    <p id="username-help" class="help">英数字・_で3〜32文字。大文字は小文字になります。</p>
+    <label for="password">パスワード</label>
+    <input id="password" name="password" type="password" autocomplete="new-password" minlength="8" maxlength="256" required aria-describedby="password-help">
+    <p id="password-help" class="help">8〜128文字で入力してください。</p>
+    <button type="submit" class="button">アカウントを作成</button>
+  </form>
+  <p class="switch-form">アカウントをお持ちですか？ <a href="/login">ログイン</a></p>
+</section>
+<%- include('partials/footer') %>
