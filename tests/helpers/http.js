@@ -14,3 +14,13 @@ export function client(base) {
     },
   };
 }
+
+export function csrf(page) {
+  const match = page.text.match(/name="_csrf" value="([^"]+)"/);
+  if (!match) throw new Error(`No CSRF token in ${page.status} response`);
+  return match[1];
+}
+export async function submit(browser, path, form, pagePath = path) {
+  const page = await browser.request(pagePath);
+  return browser.request(path, { method: 'POST', form: { ...form, _csrf: csrf(page) } });
+}
