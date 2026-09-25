@@ -11,6 +11,8 @@ test('public mode requires secrets and an explicit valid proxy boundary', () => 
     assert.throws(() => readConfig({ ...settings, [key]: '' }));
   }
   for (const value of ['true', '*', '0.0.0.0/0', '::/0', '127.0.0.1/99']) assert.throws(() => readConfig({ ...settings, TRUST_PROXY: value }));
+  for (const value of ['::ffff:0.0.0.0/96', '::ffff:0.0.0.0/64', '0:0:0:0:0:FFFF:0:0/96', '::ffff:c000:201/120']) assert.throws(() => readConfig({ ...settings, TRUST_PROXY: value }));
+  assert.doesNotThrow(() => readConfig({ ...settings, TRUST_PROXY: '192.0.2.0/24,2001:db8::/64' }));
 });
 test('Basic auth protects every route and static file before environment allocation', async t => {
   const running = await startServer({ config: readConfig(settings) }); t.after(() => running.close());

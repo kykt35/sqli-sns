@@ -15,6 +15,9 @@ export function readConfig(env = process.env) {
   for (const proxy of trustedProxies) {
     const parts = proxy.split('/');
     const version = isIP(parts[0]);
+    // Use IPv4 CIDR notation for mapped addresses so IPv6 prefix lengths cannot
+    // silently expand the trusted range to the entire IPv4 address space.
+    if (version === 6 && parts.length === 2 && new URL(`http://[${parts[0]}]/`).hostname.startsWith('[::ffff:')) throw new Error('Use IPv4 notation for mapped TRUST_PROXY CIDR');
     const prefix = parts[1] === undefined ? (version === 4 ? 32 : 128) : Number(parts[1]);
     if (!version || parts.length > 2 || !Number.isInteger(prefix) || prefix < 1 || prefix > (version === 4 ? 32 : 128)) throw new Error('Invalid TRUST_PROXY');
   }
