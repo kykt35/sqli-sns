@@ -7,7 +7,7 @@ export async function startServer({ config = readConfig(), ...options } = {}) {
   let server;
   try {
     server = await new Promise((resolve, reject) => {
-      const listener = runtime.app.listen(config.port, config.host, () => resolve(listener));
+      const listener = runtime.app.listen(config.port, config.host, error => error ? reject(error) : resolve(listener));
       listener.once('error', reject);
     });
   } catch (error) { runtime.close(); throw error; }
