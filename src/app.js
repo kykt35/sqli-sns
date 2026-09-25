@@ -1,4 +1,9 @@
 import express from 'express';
+import { fileURLToPath } from 'node:url';
+import { csrfProtection } from './middleware/csrf.js';
+import { currentUser } from './middleware/current-user.js';
+import { authRoutes } from './routes/auth.js';
+import { notFound, handleError } from './middleware/errors.js';
 import session from 'express-session';
 import { prepareSeed, createDatabase } from './db/create-db.js';
 import { EnvironmentRegistry } from './runtime/environments.js';
@@ -13,6 +18,16 @@ export async function createApplication(config, { seed, now = Date.now } = {}) {
   cleanup.unref();
   const app = express();
   app.disable('x-powered-by');
+  app.set('view engine', 'ejs');
+  app.set('views', fileURLToPath(new URL('../views', import.meta.url)));
+  app.locals.user = null; app.locals.csrf = '';
+  app.use((_req, res, next) => {
+    res.set('Content-Security-Policy', "default-src 'self'; style-src 'self'; script-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'");
+    res.set('X-Content-Type-Options', 'nosniff');
+    res.set('Referrer-Policy', 'same-origin');
+    next();
+  });
+  app.use(express.static(fileURLToPath(new URL('../public', import.meta.url))));
   app.use((_req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
   app.use(session({
     genid(req) {
@@ -25,10 +40,12 @@ export async function createApplication(config, { seed, now = Date.now } = {}) {
     cookie: { httpOnly: true, sameSite: 'lax', secure: config.mode === 'public', maxAge: config.ttlMs },
   }));
   app.use(environmentMiddleware(environments));
-  app.get('/', (_req, res) => res.type('text').send('簡易SNS'));
-  app.use((error, _req, res, _next) => {
-    if (error.status !== 503) console.error('SNS request failed:', error.name);
-    res.status(error.status === 503 ? 503 : 500).type('text').send(error.status === 503 ? error.message : '処理できませんでした。');
-  });
+  app.use(express.urlencoded({ extended: false, limit: '16kb', parameterLimit: 12 }));
+  app.use(currentUser);
+  app.use(csrfProtection);
+  app.use(authRoutes({ dummyDigest: initial.alice }));
+  app.get('/', (_req, res) => res.render('home', { title: 'ホーム' }));
+  app.use(notFound);
+  app.use(handleError);
   return { app, config, environments, store, close() { clearInterval(cleanup); store.close(); environments.close(); } };
 }
