@@ -1,0 +1,9 @@
+<%- include('partials/header') %>
+<p class="eyebrow">FIND A NOTE</p><h1>言葉を探す。</h1><p class="intro">公開投稿と、あなたの非公開投稿から。</p>
+<form class="search-form" method="get" action="/search" role="search"><label class="sr-only" for="q">投稿を検索</label><input id="q" name="q" value="<%= query %>" placeholder="気になる言葉を探す" maxlength="200"><button type="submit" class="button secondary">検索</button></form>
+<% if (error) { %><p class="alert" role="alert"><%= error %></p><% } else { %>
+<div class="section-heading"><h2>検索結果</h2><span><%= posts.length %>件・新しい順・最大50件</span></div>
+<% if (!posts.length) { %><div class="empty"><h2>投稿が見つかりませんでした</h2><p>別の言葉で検索してみてください。</p></div><% } %>
+<div class="post-list"><% for (const post of posts) { %><%- include('partials/post', { post }) %><% } %></div>
+<% } %>
+<%- include('partials/footer') %>

@@ -14,7 +14,9 @@
     <p class="brand-caption">日々の、小さな記録。</p>
     <nav aria-label="メインナビゲーション">
       <a class="nav-link" href="/">タイムライン <span aria-hidden="true">↗</span></a>
+      <a class="nav-link" href="/search">投稿を検索 <span aria-hidden="true">⌕</span></a>
       <% if (user) { %>
+        <a class="button" href="/posts/new">＋ 投稿する</a>
         <p class="signed-in">ログイン中<br><strong>@<%= user.username %></strong></p>
         <form method="post" action="/logout"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="quiet-button" type="submit">ログアウト</button></form>
       <% } else { %>

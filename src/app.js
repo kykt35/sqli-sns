@@ -2,6 +2,8 @@ import express from 'express';
 import { fileURLToPath } from 'node:url';
 import { csrfProtection } from './middleware/csrf.js';
 import { currentUser } from './middleware/current-user.js';
+import { postsRoutes } from './routes/posts.js';
+import { searchRoutes } from './routes/search.js';
 import { authRoutes } from './routes/auth.js';
 import { notFound, handleError } from './middleware/errors.js';
 import session from 'express-session';
@@ -44,7 +46,8 @@ export async function createApplication(config, { seed, now = Date.now } = {}) {
   app.use(currentUser);
   app.use(csrfProtection);
   app.use(authRoutes({ dummyDigest: initial.alice }));
-  app.get('/', (_req, res) => res.render('home', { title: 'ホーム' }));
+  app.use(postsRoutes);
+  app.use(searchRoutes);
   app.use(notFound);
   app.use(handleError);
   return { app, config, environments, store, close() { clearInterval(cleanup); store.close(); environments.close(); } };
