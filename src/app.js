@@ -7,6 +7,7 @@ import { searchRoutes } from './routes/search.js';
 import { authRoutes } from './routes/auth.js';
 import { notFound, handleError } from './middleware/errors.js';
 import session from 'express-session';
+import { basicAuth } from './middleware/basic-auth.js';
 import { prepareSeed, createDatabase } from './db/create-db.js';
 import { EnvironmentRegistry } from './runtime/environments.js';
 import { SessionStore } from './runtime/session-store.js';
@@ -20,6 +21,7 @@ export async function createApplication(config, { seed, now = Date.now } = {}) {
   cleanup.unref();
   const app = express();
   app.disable('x-powered-by');
+  app.set('trust proxy', config.mode === 'public' ? config.trustedProxies : false);
   app.set('view engine', 'ejs');
   app.set('views', fileURLToPath(new URL('../views', import.meta.url)));
   app.locals.user = null; app.locals.csrf = '';
@@ -29,6 +31,7 @@ export async function createApplication(config, { seed, now = Date.now } = {}) {
     res.set('Referrer-Policy', 'same-origin');
     next();
   });
+  app.use(basicAuth(config));
   app.use(express.static(fileURLToPath(new URL('../public', import.meta.url))));
   app.use((_req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
   app.use(session({
