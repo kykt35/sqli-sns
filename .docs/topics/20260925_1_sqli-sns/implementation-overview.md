@@ -1,7 +1,7 @@
 # 簡易SNS 実装計画の全体像
 
 - 作成日: 2026-09-25
-- 状態: 計画のみ。コード、ブランチ、PR、公開環境は未作成。
+- 状態: 実装中。文書を `sqli-sns/` 配下へ移動し、Plan 1から順に着手。実績は各checklistを参照。
 - 要件: [要件整理書](./research-report-1.md)。元イベント資料よりも、この会話での最新の指定を優先する。
 
 ## 完成させるもの
@@ -18,7 +18,7 @@
 
 | 順序 | Plan / PR | head（予定） | base（予定） | 位置 | チェックリスト |
 | --- | --- | --- | --- | --- | --- |
-| 1 | [Plan 1：起動・DB・参加者環境](./plan-1.md) | `feat/sns-foundation` | `main`（仮） | bottom | [checklist-1](./checklist-1.md) |
+| 1 | [Plan 1：起動・DB・参加者環境](./plan-1.md) | `feat/sns-foundation` | `main` | bottom | [checklist-1](./checklist-1.md) |
 | 2 | [Plan 2：登録・認証](./plan-2.md) | `feat/sns-auth` | `feat/sns-foundation` | middle | [checklist-2](./checklist-2.md) |
 | 3 | [Plan 3：投稿・検索](./plan-3.md) | `feat/sns-posts-search` | `feat/sns-auth` | middle | [checklist-3](./checklist-3.md) |
 | 4 | [Plan 4：限定公開の準備・総合検証](./plan-4.md) | `feat/sns-runtime` | `feat/sns-posts-search` | top | [checklist-4](./checklist-4.md) |
@@ -32,8 +32,8 @@ Plan 1 → 2 → 3 → 4の順にマージする。下位PRのマージ後は上
 | 項目 | 採用案 |
 | --- | --- |
 | 作成先 | `/Users/kiyotada/projects/engineercafe/sqli-sns/` に専用アプリを新設。既存教材は変更しない |
-| リポジトリ | 新規の独立リポジトリを想定。現在の作業ルートはGitリポジトリではなく、`sqli-sns/` も未作成。実装開始時に配置・Git管理範囲・リモートを確認する |
-| トランク | `main` を仮置き。実際のリポジトリを確認して全Planへ反映する。新規リポジトリの場合は最小の初期コミットを用意してからPlan 1のブランチを作る |
+| リポジトリ | 独立リポジトリ `kykt35/sqli-sns`。ユーザーが用意した空のリポジトリを使用 |
+| トランク | `main`。最小の初期コミット `2ae5f8d` を作成し、Plan 1は `feat/sns-foundation` で実装 |
 | サーバー | Node.js + Express、EJSによるサーバーレンダリング。SPAや別のAPIサーバーは設けない |
 | DB | better-sqlite3。参加者環境ごとに独立したインメモリSQLite接続を持つ。ファイル永続化は不要とする |
 | セッション | サーバーのメモリで管理。ブラウザには推測困難なセッションIDのみを渡し、環境IDとユーザーIDはサーバー側で保持する |
