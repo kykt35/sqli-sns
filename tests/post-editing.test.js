@@ -25,6 +25,14 @@ test('editing changes only an owned body, even with extra fields and SQL-like in
   assert.match((await a.request('/posts/1')).text, /leading newline/);
   const before = await a.request('/posts/3');
   assert.match(before.text, /コーヒー/);
+  const postsBeforeInjection = running.db.prepare('SELECT id, user_id, body, is_public FROM posts ORDER BY id').all();
+  const injectionBody = "changed', is_public=1 WHERE 1=1 -- ";
+  const injectionAttempt = await submit(a, '/posts/2', { body: injectionBody }, '/posts/2/edit');
+  assert.equal(injectionAttempt.status, 303);
+  assert.deepEqual(
+    running.db.prepare('SELECT id, user_id, body, is_public FROM posts ORDER BY id').all(),
+    postsBeforeInjection.map(post => post.id === 2 ? { ...post, body: injectionBody } : post),
+  );
   assert.equal((await a.request('/posts/1', { method: 'POST', form: { body: 'no csrf' } })).status, 403);
   assert.equal((await a.request('/posts/1%20OR%201=1')).status, 404);
 });

@@ -22,10 +22,14 @@ test('search is literal, parameterized and limited to visible posts', async t =>
     assert.equal(r.status, 200); assert.match(r.text, /literal %/);
     assert.doesNotMatch(r.text, /Bobの非公開メモ|コーヒーを飲みながら|今日はエンジニアカフェ/);
   }
-  const injection = await a.request('/search?q=' + encodeURIComponent("' OR 1=1 UNION SELECT username,password_digest FROM users--"));
-  assert.equal(injection.status, 200);
-  assert.match(injection.text, /見つかりませんでした/);
-  assert.doesNotMatch(injection.text, /scrypt\$/);
+  for (const injection of [
+    "' OR 1=1 -- ",
+    "%' UNION SELECT id,id,password_digest,1,'','','' FROM users--",
+  ]) {
+    const response = await a.request('/search?q=' + encodeURIComponent(injection));
+    assert.equal(response.status, 200);
+    assert.doesNotMatch(response.text, /Bobの非公開メモ|scrypt\$/);
+  }
   assert.equal((await a.request('/search?q=' + 'x'.repeat(100))).status, 200);
   assert.equal((await a.request('/search?q=' + 'x'.repeat(101))).status, 400);
   assert.equal((await a.request('/search?q=x&q=y')).status, 400);
