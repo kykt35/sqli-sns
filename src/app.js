@@ -5,6 +5,7 @@ import { currentUser } from './middleware/current-user.js';
 import { postsRoutes } from './routes/posts.js';
 import { searchRoutes } from './routes/search.js';
 import { authRoutes } from './routes/auth.js';
+import { usersRoutes } from './routes/users.js';
 import { notFound, handleError } from './middleware/errors.js';
 import session from 'express-session';
 import { basicAuth } from './middleware/basic-auth.js';
@@ -48,6 +49,7 @@ export async function createApplication(config, { seed, now = Date.now } = {}) {
   app.use(csrfProtection);
   app.use(authRoutes({ dummyDigest: initial.alice }));
   app.use(postsRoutes);
+  app.use(usersRoutes);
   app.use(searchRoutes);
   app.use(notFound);
   app.use(handleError);
