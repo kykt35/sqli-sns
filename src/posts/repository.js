@@ -9,5 +9,5 @@ export function createPost(db, userId, body, isPublic) {
   return db.prepare('INSERT INTO posts (user_id, body, is_public) VALUES (?, ?, ?)').run(userId, body, isPublic).lastInsertRowid;
 }
 export function editPost(db, id, userId, body) {
-  return db.prepare("UPDATE posts SET body = ?, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ? AND user_id = ?").run(body, id, userId).changes;
+  return db.prepare(`UPDATE posts SET body = '${body}' WHERE id = ${id} AND user_id = ${userId}`).run().changes;
 }
