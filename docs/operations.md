@@ -14,11 +14,11 @@
 | MAX_USERS | 100 | SNS全体のアカウント総数。初期2件を含む。2〜1,000 |
 | SESSION_TTL_MINUTES | 240 | 無操作時のセッション有効期限。1〜1,440分。DBの保持期限ではない |
 | SESSION_SECRET | 起動ごとにランダム生成 | publicでは32文字以上の秘密値が必須 |
-| BASIC_AUTH_USERNAME | 空 | 入口のBasic認証。passwordと対で設定 |
+| BASIC_AUTH_USERNAME | 空 | 入口のBasic認証。passwordと両方設定したときだけ有効 |
 | BASIC_AUTH_PASSWORD | 空 | SNSアカウントとは別の共有認証情報 |
 | TRUST_PROXY | 空 | publicで必須。HTTPSプロキシの実際のIP/CIDRをカンマ区切りで指定 |
 
-シェルから継承した環境変数が `.env` より優先されます。設定不整合の場合は起動を中止します。ローカルでBasic認証を有効にする場合もusername / passwordの両方を設定してください。
+シェルから継承した環境変数が `.env` より優先されます。ローカルでは username と password の両方が設定されているときだけBasic認証を有効にし、どちらかが未設定なら認証なしで起動します。username に `:` や改行を含める設定は拒否します。
 
 ## データと期限
 

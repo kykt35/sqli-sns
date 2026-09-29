@@ -22,7 +22,7 @@ export function readConfig(env = process.env) {
     const prefix = parts[1] === undefined ? (version === 4 ? 32 : 128) : Number(parts[1]);
     if (!version || parts.length > 2 || !Number.isInteger(prefix) || prefix < 1 || prefix > (version === 4 ? 32 : 128)) throw new Error('Invalid TRUST_PROXY');
   }
-  if (Boolean(basicUsername) !== Boolean(basicPassword) || /[:\r\n]/.test(basicUsername)) throw new Error('Invalid Basic authentication settings');
+  if (basicUsername && basicPassword && /[:\r\n]/.test(basicUsername)) throw new Error('Invalid Basic authentication settings');
   if (mode === 'public' && (!basicUsername || !basicPassword || !env.SESSION_SECRET || env.SESSION_SECRET.length < 32 || trustedProxies.length === 0)) throw new Error('Public configuration is incomplete');
   return {
     basicUsername, basicPassword, trustedProxies,
