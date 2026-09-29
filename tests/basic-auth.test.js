@@ -6,6 +6,19 @@ import { client } from './helpers/http.js';
 
 const settings = { APP_MODE: 'public', PORT: '0', SESSION_SECRET: 'test-only-secret-'.repeat(3), BASIC_AUTH_USERNAME: 'event', BASIC_AUTH_PASSWORD: 'test-event-pass', TRUST_PROXY: '127.0.0.1' };
 const authorization = 'Basic ' + Buffer.from('event:test-event-pass').toString('base64');
+test('local mode starts without Basic auth unless both credentials are set', async t => {
+  for (const env of [{}, { BASIC_AUTH_USERNAME: 'only-user' }, { BASIC_AUTH_PASSWORD: 'only-password' }]) {
+    assert.doesNotThrow(() => readConfig({ PORT: '0', ...env }));
+    const running = await startServer({ config: readConfig({ PORT: '0', ...env }) });
+    t.after(() => running.close());
+    assert.equal((await fetch(running.url)).status, 200);
+  }
+  assert.throws(() => readConfig({ BASIC_AUTH_USERNAME: 'bad:user', BASIC_AUTH_PASSWORD: 'secret' }));
+  const running = await startServer({ config: readConfig({ PORT: '0', BASIC_AUTH_USERNAME: 'event', BASIC_AUTH_PASSWORD: 'test-event-pass' }) });
+  t.after(() => running.close());
+  assert.equal((await fetch(running.url)).status, 401);
+  assert.equal((await fetch(running.url, { headers: { authorization } })).status, 200);
+});
 test('public mode requires secrets and an explicit valid proxy boundary', () => {
   for (const key of ['SESSION_SECRET', 'BASIC_AUTH_USERNAME', 'BASIC_AUTH_PASSWORD', 'TRUST_PROXY']) {
     assert.throws(() => readConfig({ ...settings, [key]: '' }));
